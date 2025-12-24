@@ -1,95 +1,111 @@
 <!DOCTYPE html>
-
-<html>
-
+<html lang="en">
 <head>
-
+  <meta charset="UTF-8" />
   <title>Side Quest Console</title>
 
-  <meta charset="utf-8" />
-
+  <style>
+    body {
+      background: #0b0b0b;
+      color: #eaeaea;
+      font-family: monospace;
+      padding: 40px;
+    }
+    button {
+      background: #eaeaea;
+      color: #0b0b0b;
+      border: none;
+      padding: 14px 20px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+    pre {
+      margin-top: 20px;
+      white-space: pre-wrap;
+    }
+  </style>
 </head>
 
-
-
-<body style="font-family: monospace; background:#0b0b0b; color:#eaeaea; padding:40px;">
-
+<body>
   <h1>🗺️ SIDE QUEST</h1>
+  <p>Status: waiting</p>
 
+  <button onclick="dropQuest()">Drop Side Quest</button>
 
-
-  <button onclick="dropQuest()" style="font-size:18px;">
-
-    Drop Side Quest
-
-  </button>
-
-
-
-  <pre id="output" style="margin-top:20px;"></pre>
-
-
-
-  <script src="https://js.puter.com/v2/"></script>
+  <pre id="output"></pre>
 
   <script>
+    const CEREBRAS_API_KEY = "csk-rtk3ypyxwkkt56fc4d29j489fej3ynkny8vyr3ckx65pfcxe";
+    const DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1453423609866359009/t1M_lnI6SF9V2yuE2IHjoaiVtCKlhDZxW2Wv3OAyvFFdvXaqBaQNAVQ5kgreJ-5R9DfD";
 
-    async function dropQuest() {
-
-      document.getElementById("output").textContent = "Generating…";
-
-
-
-      const res = await puter.ai.chat({
-
-        model: "gpt-4o-mini",
-
-        messages: [{
-
-          role: "user",
-
-          content: `
-
-Create a safe, legal side quest for two or three teenagers.
-
-Small UK town, can travel not too far outside on public transport
-
-Little to no money.
-
-`
-
-        }]
-
-      });
-
-
-
-      const quest = res.message.content;
-
-
-
-      document.getElementById("output").textContent = quest;
-
-
-
-      await fetch("https://discord.com/api/webhooks/1453423609866359009/t1M_lnI6SF9V2yuE2IHjoaiVtCKlhDZxW2Wv3OAyvFFdvXaqBaQNAVQ5kgreJ-5R9DfD", {
-
-        method: "POST",
-
-        headers: { "Content-Type": "application/json" },
-
-        body: JSON.stringify({
-
-          content: "🗺️ **SIDE QUEST DROPPED**\n\n" + quest
-
-        })
-
-      });
-
+    function isWeekend() {
+      const day = new Date().getDay();
+      return day === 0 || day === 6;
     }
 
+    async function generateQuest() {
+      const res = await fetch("https://api.cerebras.ai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + CEREBRAS_API_KEY
+        },
+        body: JSON.stringify({
+          model: "llama3.1-8b",
+          messages: [
+            {
+              role: "user",
+              content: `
+Create a real-world side quest for two teenagers.
+
+Rules:
+- Safe and legal
+- No money
+- Under 1 hour
+- Small UK town
+- Slightly adventurous
+- Not cringe
+
+Just write the quest. No explanations.
+`
+            }
+          ]
+        })
+      });
+
+      const data = await res.json();
+      return data.choices[0].message.content;
+    }
+
+    async function dropQuest() {
+      const output = document.getElementById("output");
+
+      // Comment this out if you want weekday testing
+      if (!isWeekend()) {
+        output.textContent = "No quest today. Come back on the weekend.";
+        return;
+      }
+
+      output.textContent = "Generating…";
+
+      try {
+        const quest = await generateQuest();
+
+        output.textContent = quest;
+
+        await fetch(DISCORD_WEBHOOK, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            content: "🗺️ **SIDE QUEST DROPPED**\n\n" + quest
+          })
+        });
+
+      } catch (err) {
+        output.textContent = "Something broke. Try again.";
+        console.error(err);
+      }
+    }
   </script>
-
 </body>
-
 </html>
