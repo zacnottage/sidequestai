@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+  <title>Side Quest Console</title>
+
+  <meta charset="utf-8" />
+
+</head>
+
+
+<body style="font-family: monospace; background:#0b0b0b; color:#eaeaea; padding:40px;">
+
+  <h1>🗺️ SIDE QUEST</h1>
+
+
+  <button onclick="dropQuest()" style="font-size:18px;">
+
+    Drop Side Quest
+
+  </button>
+
+
+  <pre id="output" style="margin-top:20px;"></pre>
+
+
+  <script src="https://js.puter.com/v2/"></script>
+  <script>
+    async function dropQuest() {
+      document.getElementById("output").textContent = "Generating…";
+
+
+      const res = await puter.ai.chat({
+        model: "gpt-4o-mini",
+        messages: [{
+          role: "user",
+          content: `
+Create a safe, legal side quest for two or three teenagers.
+
+Small UK town, can travel not too far outside on public transport
+
+Little to no money.
+
+`
+        }]
+      });
+
+
+      const quest = res.message.content;
+
+
+      document.getElementById("output").textContent = quest;
+
+
+      await fetch("https://discord.com/api/webhooks/1453423609866359009/t1M_lnI6SF9V2yuE2IHjoaiVtCKlhDZxW2Wv3OAyvFFdvXaqBaQNAVQ5kgreJ-5R9DfD", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: "🗺️ **SIDE QUEST DROPPED**\n\n" + quest
+        })
+      });
+    }
+  </script>
+</body>
+
+</html>
